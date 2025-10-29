@@ -279,7 +279,7 @@ if st.sidebar.button("Export CSV"):
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("GitHub Repo")
-repo_link = st.sidebar.text_input("Enter your repo URL", "https://github.com/thesardonicone/Smart-Adaptive-Camouflage-Suit-Live-Simulation/")
+repo_link = st.sidebar.text_input("Enter your repo URL", https://smart-adaptive-camouflage-suit-live-simulation.streamlit.app/")
 if st.sidebar.button("Show QR"):
     generate_qr(repo_link)
 
@@ -331,6 +331,7 @@ while True:
             else:
                 st.info("No data yet.")
     time.sleep(interval)
+
 
 
 
