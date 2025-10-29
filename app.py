@@ -6,7 +6,66 @@ import random
 from datetime import datetime, UTC
 import plotly.express as px
 import io, qrcode
+# 📱 Responsive Layout Helper (Do NOT remove any of your existing code)
+import streamlit as st
 
+st.set_page_config(page_title="Smart Adaptive Camouflage Suit", layout="wide", page_icon="🪖")
+
+# --- Responsive CSS for Mobile Optimisation ---
+st.markdown("""
+<style>
+/* General scaling */
+body, .block-container {
+    margin: 0 auto !important;
+    padding: 0.5rem !important;
+    max-width: 95vw !important;
+}
+
+/* Hide overflow on mobile */
+@media (max-width: 768px) {
+    section.main > div {
+        padding: 0.2rem !important;
+    }
+
+    /* Reduce font sizes */
+    h1, h2, h3, h4, h5 {
+        font-size: 1rem !important;
+    }
+
+    /* Charts scale to full width */
+    .stPlotlyChart {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Sidebar becomes collapsible */
+    [data-testid="stSidebar"] {
+        width: 100% !important;
+        background-color: rgba(20,20,20,0.9) !important;
+        position: relative !important;
+        padding: 0.5rem !important;
+    }
+
+    /* Metric cards stack vertically */
+    .stMetric {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Reduce chart margins */
+    .plot-container {
+        margin: 0 !important;
+    }
+
+    /* Compact buttons */
+    button {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.9rem !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
@@ -272,4 +331,5 @@ while True:
             else:
                 st.info("No data yet.")
     time.sleep(interval)
+
 
