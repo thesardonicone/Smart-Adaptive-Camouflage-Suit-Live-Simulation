@@ -38,7 +38,7 @@ This Streamlit-based software prototype simulates the intelligent behaviour of s
 
 4️⃣ View Dashboard  
 The app launches locally at:  
-🔗 **http://localhost:8501**
+🔗 **https://smart-adaptive-camouflage-suit-live-simulation.streamlit.app/)**
 
 🛰️ Real-World Relevance  
 - **Defence & Military:** Environment-adaptive camouflage, wound monitoring, self-healing fabric.  
