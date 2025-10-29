@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Adaptive Camouflage Suit - Infographic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .chart-container {
+                max-width: 500px;
+                height: 400px;
+            }
+        }
+        .flow-box {
+            background-color: white;
+            border: 2px solid #00A1E4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            color: #0077B5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            flex-grow: 1;
+            margin: 0 0.5rem;
+            min-width: 150px;
+        }
+        .flow-arrow {
+            font-size: 2.5rem;
+            color: #00A1E4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.5rem 0;
+            transform: rotate(90deg);
+        }
+        @media (min-width: 768px) {
+            .flow-arrow {
+                margin: 0;
+                transform: rotate(0deg);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#0077B5] mb-4">Smart Adaptive Camouflage Suit</h1>
+            <p class="text-xl text-gray-600">JSSATEB Ideathon 2025: Fusing DefenceTech and MedTech</p>
+        </header>
+
+        <section class="mb-16">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                    <h2 class="text-3xl font-bold text-[#00A1E4] mb-4">A New Era of Intelligent Uniforms</h2>
+                    <p class="text-lg text-gray-700 mb-4">
+                        This project introduces a revolutionary concept: a "living" uniform for soldiers and astronauts. By merging advanced nanotechnology, artificial intelligence, and biosensors, the suit provides active, responsive protection.
+                    </p>
+                    <p class="text-gray-700">
+                        It's not just passive clothing; it's an active ecosystem that adapts its camouflage to the environment, monitors the wearer's vital signs, regulates body temperature, and autonomously triggers alerts in hazardous situations. This infographic explores the core components, simulated functions, and transformative impact of this futuristic technology.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Core Concept: A Hybrid Fusion</h3>
+                    <div class="chart-container h-80 max-h-80">
+                        <canvas id="techFusionChart"></canvas>
+                    </div>
+                    <p class="text-center text-gray-600 mt-4">
+                        The suit's DNA is a perfect blend of two advanced fields, creating a symbiotic system for protection and health monitoring.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">Core Technology Architecture</h2>
+            <p class="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+                The suit's intelligence is built on a foundation of integrated nanosensors that feed data to a powerful AI processor, enabling real-time adaptive responses.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div>
+                    <img src="http://googleusercontent.com/image_generation_content/2" alt="Conceptual image of nanosensors embedded in high-tech fabric" class="rounded-lg shadow-xl mx-auto w-full">
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-2xl font-semibold text-[#0077B5] mb-4">1. Nanosensor Network</h3>
+                        <p class="text-gray-700 mb-4">Embedded within the fabric, these sensors continuously measure key parameters:</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li>Ambient Temperature</li>
+                            <li>Light Intensity</li>
+                            <li>Heart Rate & SpO₂</li>
+                            <li>Radiation Exposure</li>
+                            <li>Physiological Data</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-2xl font-semibold text-[#0077B5] mb-4">2. AI Processing Engine</h3>
+                        <p class="text-gray-700 mb-4">
+                            A Random Forest Classifier acts as the suit's "brain." It processes the incoming stream of sensor data to analyze the wearer's condition and the external environment instantly.
+                        </p>
+                        <p class="text-gray-700 font-semibold">
+                            This AI model determines the most appropriate operational state for the suit.
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-2xl font-semibold text-[#0077B5] mb-4">3. Adaptive States</h3>
+                        <p class="text-gray-700">
+                            Based on the AI's decision, the suit dynamically shifts between four distinct modes to ensure optimal performance, comfort, and safety. Each mode triggers unique responses in camouflage and life support.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">The 4 Adaptive Modes</h2>
+            <p class="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+                The suit's visual and functional state changes based on AI classification, as demonstrated in the simulation's real-time camouflage visualization.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-green-600 text-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-2xl font-bold mb-2">Cool Mode</h3>
+                    <p class="font-medium">Environment: Forest / Stable</p>
+                    <p>Engaged during stable conditions for thermal regulation and standard camouflage.</p>
+                </div>
+                <div class="bg-yellow-700 text-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-2xl font-bold mb-2">Heat Mode</h3>
+                    <p class="font-medium">Environment: Desert / High Exertion</p>
+                    <p>Activates to manage high thermal exposure and adapt to arid environments.</p>
+                </div>
+                <div class="bg-gray-600 text-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-2xl font-bold mb-2">Stealth Mode</h3>
+                    <p class="font-medium">Environment: Urban / Space / Low-Vis</p>
+                    <p>Optimizes for low visibility, blending into urban or dark environments.</p>
+                </div>
+                <div class="bg-red-700 text-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-2xl font-bold mb-2">Alert Mode</h3>
+                    <p class="font-medium">Environment: DANGER</p>
+                    <p>Triggers autonomously on detecting extreme readings or trauma. Pulsates red for visual alert.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">Alert Mode Engaged</h2>
+            <img src="http://googleusercontent.com/image_generation_content/0" alt="Soldier in red glowing adaptive suit in Alert Mode" class="rounded-lg shadow-xl mx-auto max-w-3xl w-full">
+            <p class="text-center text-gray-600 mt-6 text-lg max-w-3xl mx-auto">
+                The suit autonomously triggers 'Alert Mode' in hazardous conditions, pulsating red to signify danger and notify command.
+            </p>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">System Feedback Loop</h2>
+            <p class="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+                The entire system operates on a continuous, closed-loop feedback model, proving the concept's feasibility without physical hardware.
+            </p>
+            <div class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flow-box">Sensors<br>(Temp, Light, Vitals)</div>
+                    <div class="flow-arrow">&#8594;</div>
+                    <div class="flow-box">AI Processor<br>(Random Forest)</div>
+                    <div class="flow-arrow">&#8594;</div>
+                    <div class="flow-box">Mode Decision<br>(Cool, Heat, Alert...)</div>
+                    <div class="flow-arrow">&#8594;</div>
+                    <div class="flow-box">Adaptive Response<br>(Camouflage & Alerts)</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">Simulation & Vitals Monitoring</h2>
+            <p class="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+                A Python-based simulation was built to validate the concept. It generates synthetic sensor data, classifies it using the AI model, and visualizes the results on a real-time dashboard.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Simulation Tech Stack</h3>
+                    <div class="chart-container h-96 max-h-96">
+                        <canvas id="techStackChart"></canvas>
+                    </div>
+                    <p class="text-center text-gray-600 mt-4">
+                        The prototype uses a modern Python stack to simulate the suit's core logic, from AI deployment to data visualization.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Simulated Dashboard Interface</h3>
+                    <img src="http://googleusercontent.com/image_generation_content/1" alt="Futuristic dashboard of soldier vital signs" class="rounded-lg shadow-md w-full my-4">
+                    <p class="text-center text-gray-600 mt-4">
+                        The simulation dashboard provides a real-time mock-up of the suit's interface, tracking vitals, environment, and AI mode.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-[#00A1E4] mb-4">Multi-Domain Impact</h2>
+            <p class="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
+                The project's modular architecture isn't limited to one field. Its core technology has transformative potential across multiple high-stakes domains.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-center text-gray-700 mb-4">Potential Application Areas</h3>
+                    <div class="chart-container h-80 max-h-80">
+                        <canvas id="impactChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-2xl text-[#00A1E4] mr-3">&#128737;</span>
+                            <div>
+                                <h4 class="text-xl font-semibold text-[#0077B5]">Defence</h4>
+                                <p class="text-gray-700">Self-adjusting camouflage, live health telemetry for soldiers, and autonomous trauma alerts.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-2xl text-[#00A1E4] mr-3">&#128640;</span>
+                            <div>
+                                <h4 class="text-xl font-semibold text-[#0077B5]">Space Exploration</h4>
+                                <p class="text-gray-700">Intelligent suits that regulate oxygen, radiation shielding, and pressure for astronauts.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                             <span class="text-2xl text-[#00A1E4] mr-3">&#10010;</span>
+                            <div>
+                                <h4 class="text-xl font-semibold text-[#0077B5]">Healthcare</h4>
+                                <p class="text-gray-700">Wearable devices for continuous patient monitoring and predictive diagnostics.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-12 py-8 border-t border-gray-300">
+            <h2 class="text-3xl font-bold text-[#0077B5] mb-4">The Future: Active Symbiosis</h2>
+            <p class="text-lg text-gray-700 max-w-4xl mx-auto">
+                By merging AI, IoT, and nanotechnology, the Smart Adaptive Camouflage Suit transforms clothing from passive protection into an active biological and technological symbiosis—a uniform that senses, reacts, and protects.
+            </p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const brilliantBlues = {
+                primary: '#00A1E4',
+                light: '#00BFFF',
+                dark: '#0077B5',
+                accent1: '#7FDBFF',
+                accent2: '#B2EBF2'
+            };
+            
+            const textGray = '#4A5568';
+            const textGrayLight = '#718096';
+
+            const wrapLabel = (label, maxWidth = 16) => {
+                if (label.length <= maxWidth) {
+                    return label;
+                }
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + word).length <= maxWidth) {
+                        currentLine += word + ' ';
+                    } else {
+                        lines.push(currentLine.trim());
+                        currentLine = word + ' ';
+                    }
+                }
+                lines.push(currentLine.trim());
+                return lines;
+            };
+
+            const tooltipTitleCallback = (tooltipItems) => {
+                const item = tooltipItems[0];
+                let label = item.chart.data.labels[item.dataIndex];
+                if (Array.isArray(label)) {
+                    return label.join(' ');
+                } else {
+                    return label;
+                }
+            };
+            
+            const defaultChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: textGray
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: tooltipTitleCallback
+                        }
+                    }
+                }
+            };
+
+            const techFusionCtx = document.getElementById('techFusionChart')?.getContext('2d');
+            if (techFusionCtx) {
+                new Chart(techFusionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['DefenceTech', 'MedTech'],
+                        datasets: [{
+                            data: [50, 50],
+                            backgroundColor: [brilliantBlues.primary, brilliantBlues.dark],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        cutout: '70%',
+                        plugins: {
+                            ...defaultChartOptions.plugins,
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: textGray,
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const techStackCtx = document.getElementById('techStackChart')?.getContext('2d');
+            if (techStackCtx) {
+                const techLabels = [
+                    'Streamlit (Interface)', 
+                    'Plotly (Visualization)', 
+                    'Pandas/NumPy (Data)', 
+                    'scikit-learn (AI)'
+                ];
+                new Chart(techStackCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: techLabels.map(label => wrapLabel(label)),
+                        datasets: [{
+                            label: 'Technology Role',
+                            data: [8, 9, 10, 9],
+                            backgroundColor: 'rgba(0, 161, 228, 0.2)',
+                            borderColor: brilliantBlues.primary,
+                            borderWidth: 2,
+                            pointBackgroundColor: brilliantBlues.primary
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                grid: { color: '#D1D5DB' },
+                                angleLines: { color: '#E5E7EB' },
+                                pointLabels: {
+                                    color: textGray,
+                                    font: { size: 12 }
+                                },
+                                ticks: {
+                                    backdropColor: 'transparent',
+                                    color: textGrayLight
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            const impactCtx = document.getElementById('impactChart')?.getContext('2d');
+            if (impactCtx) {
+                new Chart(impactCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Defence', 'Space Exploration', 'Healthcare'],
+                        datasets: [{
+                            data: [40, 30, 30],
+                            backgroundColor: [
+                                brilliantBlues.primary,
+                                brilliantBlues.dark,
+                                brilliantBlues.light
+                            ],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        ...defaultChartOptions,
+                        plugins: {
+                            ...defaultChartOptions.plugins,
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: textGray,
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
+
