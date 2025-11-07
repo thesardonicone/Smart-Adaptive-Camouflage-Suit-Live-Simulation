@@ -1,337 +1,269 @@
+# ----------------------------
+# STEP-BY-STEP PLAN (compact)
+# ----------------------------
+# 1) Requirements: define measurable objectives (target environments, response time, max power, weight).
+# 2) Sensing & data collection: ambient RGB, lux, CCT, IMU, TOF/texture proxy, thermal IR.
+# 3) Control pipeline: tiny ML or rule-based mapping sensor vector -> pixel/pattern commands.
+# 4) Actuation: modular patches: flexible LED matrix, addressable e-ink, thermochromic film demo.
+# 5) Power & thermal design: battery sizing, power gating, thermal cutoffs.
+# 6) Software: event-driven Streamlit UI, sensor simulator, logging, unit tests.
+# 7) Safety & UX: failure modes, manual override, diagnostics.
+# 8) Build/test: rapid prototyping and iterative data collection.
+# 9) Deliverables: demo/video, poster, BOM, block diagrams, power budget, test results, repo.
+
+# ----------------------------
+# Minimal runnable skeleton
+# ----------------------------
 import streamlit as st
-import pandas as pd
-import numpy as np
 import time
+import math
+import json
 import random
-from datetime import datetime, UTC
-import plotly.express as px
-import io, qrcode
-# 📱 Responsive Layout Helper (Do NOT remove any of your existing code)
-import streamlit as st
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, List, Tuple, Optional
+import datetime
+import os
 
-st.set_page_config(page_title="Smart Adaptive Camouflage Suit", layout="wide", page_icon="🪖")
+# ---------- Configuration ----------
+APP_TITLE = "Smart Adaptive Camouflage Suit — Demo"
+DATA_DIR = "/mnt/data/suit_data"
+os.makedirs(DATA_DIR, exist_ok=True)
 
-# --- Responsive CSS for Mobile Optimisation ---
-st.markdown("""
-<style>
-/* General scaling */
-body, .block-container {
-    margin: 0 auto !important;
-    padding: 0.5rem !important;
-    max-width: 95vw !important;
-}
+# ---------- Utilities ----------
+def now_str():
+    return datetime.datetime.utcnow().isoformat() + "Z"
 
-/* Hide overflow on mobile */
-@media (max-width: 768px) {
-    section.main > div {
-        padding: 0.2rem !important;
+# ---------- Sensor simulator ----------
+@dataclass
+class SensorReading:
+    rgb: Tuple[int,int,int]            # ambient RGB
+    lux: float                         # illuminance
+    cct: float                         # correlated colour temperature (K)
+    temperature_c: float               # ambient temperature
+    imu_yaw: float                     # orientation proxy
+    tof_mm: float                      # short-range distance as texture proxy
+    thermal_c: float                   # thermal reading (IR)
+
+def simulate_sensor(environment: str = "grass") -> SensorReading:
+    # Basic presets for demo environments
+    presets = {
+        "grass": {"rgb":(45,120,35),"lux":12000,"cct":5200,"temperature_c":30,"thermal_c":28,"tof_mm":200},
+        "sand":  {"rgb":(194,178,128),"lux":20000,"cct":6000,"temperature_c":35,"thermal_c":33,"tof_mm":250},
+        "urban": {"rgb":(120,120,120),"lux":15000,"cct":5600,"temperature_c":29,"thermal_c":29,"tof_mm":180},
+        "night": {"rgb":(10,10,20),"lux":50,"cct":3000,"temperature_c":22,"thermal_c":22,"tof_mm":120},
     }
+    base = presets.get(environment, presets["grass"])
+    jitter = lambda v, pct=0.05: int(v*(1 + random.uniform(-pct,pct))) if isinstance(v,int) else v*(1 + random.uniform(-pct,pct))
+    return SensorReading(
+        rgb=(jitter(base["rgb"][0]), jitter(base["rgb"][1]), jitter(base["rgb"][2])),
+        lux=jitter(base["lux"], 0.12),
+        cct=jitter(base["cct"], 0.05),
+        temperature_c=round(jitter(base["temperature_c"], 0.06),1),
+        imu_yaw=round(random.uniform(0,360),1),
+        tof_mm=round(jitter(base["tof_mm"], 0.15),1),
+        thermal_c=round(jitter(base["thermal_c"], 0.08),1),
+    )
 
-    /* Reduce font sizes */
-    h1, h2, h3, h4, h5 {
-        font-size: 1rem !important;
-    }
+# ---------- Actuator interface stubs ----------
+class ActuatorInterface:
+    def apply_pattern(self, pattern: Any) -> None:
+        """Apply a visual pattern to the actuator patch (override)."""
+        raise NotImplementedError
 
-    /* Charts scale to full width */
-    .stPlotlyChart {
-        width: 100% !important;
-        height: auto !important;
-    }
+class LEDMatrixActuator(ActuatorInterface):
+    def __init__(self, width=16, height=8):
+        self.width = width
+        self.height = height
+        self.state = [[(0,0,0) for _ in range(width)] for _ in range(height)]
+    def apply_pattern(self, pattern):
+        # pattern: list of rows with (r,g,b) tuples or single RGB value
+        self.state = pattern
+        # In hardware, here we'd convert state to SPI/I2C updates.
+    def preview_summary(self):
+        return {"type":"LEDMatrix","size":(self.width,self.height)}
 
-    /* Sidebar becomes collapsible */
-    [data-testid="stSidebar"] {
-        width: 100% !important;
-        background-color: rgba(20,20,20,0.9) !important;
-        position: relative !important;
-        padding: 0.5rem !important;
-    }
+class EInkActuator(ActuatorInterface):
+    def __init__(self, cols=8, rows=8):
+        self.cols = cols
+        self.rows = rows
+        self.state = [["white" for _ in range(cols)] for _ in range(rows)]
+    def apply_pattern(self, pattern):
+        self.state = pattern
+    def preview_summary(self):
+        return {"type":"EInk","size":(self.cols,self.rows)}
 
-    /* Metric cards stack vertically */
-    .stMetric {
-        display: block !important;
-        width: 100% !important;
-        margin-bottom: 0.5rem !important;
-    }
+class ThermochromicDemo(ActuatorInterface):
+    def __init__(self):
+        self.heat_map = None
+    def apply_pattern(self, pattern):
+        # pattern could be a greyscale intensity map representing heat to apply
+        self.heat_map = pattern
+    def preview_summary(self):
+        return {"type":"Thermochromic","note":"Passive demo (requires heat sources in real hardware)"}
 
-    /* Reduce chart margins */
-    .plot-container {
-        margin: 0 !important;
-    }
-
-    /* Compact buttons */
-    button {
-        padding: 0.4rem 0.6rem !important;
-        font-size: 0.9rem !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
-st.set_page_config(
-    page_title="Smart Adaptive Camouflage Suit",
-    page_icon="🪖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-st.markdown("""
-    <style>
-        body { background-color: #0d1117; color: #ffffff; }
-        .stApp { background-color: #0d1117; }
-        .main-title { font-size: 28px; font-weight: bold; color: #00ffff; }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid #444;
-            margin-top: 30px;
-            color: #aaaaaa;
+# ---------- TinyML / Decision model stubs ----------
+class TinyDecisionModel:
+    def __init__(self):
+        # Simple rule thresholds can be replaced by a TinyML model later.
+        self.rules = {
+            "dark_threshold": 100,  # lux
+            "thermal_threshold": 25
         }
-        .repo-link {
-            font-size: 16px;
-            color: #00ffff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .repo-link:hover {
-            color: #00cccc;
-            text-decoration: underline;
-        }
-    </style>
-""", unsafe_allow_html=True)
+    def predict(self, sensor: SensorReading) -> Dict[str,Any]:
+        # Return a simple mode and a pattern descriptor
+        if sensor.lux < self.rules["dark_threshold"]:
+            mode = "low_light"
+            pattern = {"type":"darker","info":"reduce brightness, increase contrast edges"}
+        elif sensor.thermal_c > self.rules["thermal_threshold"] + 5:
+            mode = "thermal"
+            pattern = {"type":"thermal-match","info":"use thermochromic prototypes"}
+        else:
+            mode = "visual_blend"
+            # Simple colour match: pick ambient RGB as dominant colour
+            pattern = {"type":"colour_fill","rgb":sensor.rgb}
+        return {"mode":mode,"pattern":pattern}
 
-# --------------------------------------------------
-# INITIALISE STATE
-# --------------------------------------------------
-if "history" not in st.session_state:
-    st.session_state.history = pd.DataFrame(columns=["timestamp", "temp", "heart", "light", "mode"])
+# ---------- Power & safety managers ----------
+class PowerManager:
+    def __init__(self, battery_mah=2000, voltage=5.0):
+        self.battery_mah = battery_mah
+        self.voltage = voltage
+    def worst_case_power_w(self, actuator_power_w=5.0, controller_power_w=1.0, sensors_power_w=0.5):
+        return actuator_power_w + controller_power_w + sensors_power_w
+    def expected_runtime_hours(self, actuator_power_w=5.0, controller_power_w=1.0, sensors_power_w=0.5):
+        total_w = self.worst_case_power_w(actuator_power_w, controller_power_w, sensors_power_w)
+        # Convert mAh at voltage to Wh: (mAh/1000)*V = Wh
+        wh = (self.battery_mah/1000.0) * self.voltage
+        if total_w <= 0:
+            return float("inf")
+        return wh / total_w
 
-# --------------------------------------------------
-# FUNCTIONS
-# --------------------------------------------------
-def predict_mode(temp, heart, light):
-    if temp >= 40 or heart >= 160:
-        return "Alert Mode"
-    elif temp > 37 and light > 0.6:
-        return "Heat Mode"
-    elif temp < 30 and light < 0.4:
-        return "Stealth Mode"
-    else:
-        return "Cool Mode"
+class SafetyManager:
+    def __init__(self, temp_cutoff_c=60.0):
+        self.temp_cutoff_c = temp_cutoff_c
+    def check(self, sensor: SensorReading) -> List[str]:
+        issues = []
+        if sensor.temperature_c > self.temp_cutoff_c:
+            issues.append("ambient_over_temp")
+        if sensor.thermal_c > self.temp_cutoff_c:
+            issues.append("thermal_patch_over_temperature")
+        if sensor.tof_mm < 50:
+            issues.append("collision_risk_close_surface")
+        return issues
 
+# ---------- Data logger and dataset utilities ----------
+class DataLogger:
+    def __init__(self, dirpath=DATA_DIR):
+        self.dirpath = dirpath
+    def save_reading(self, sensor: SensorReading, model_output: Dict[str,Any], tag: Optional[str]=None):
+        ts = now_str().replace(":","_")
+        fname = os.path.join(self.dirpath, f"reading_{ts}.json")
+        payload = {"timestamp": now_str(), "sensor": asdict(sensor), "model": model_output, "tag": tag}
+        with open(fname, "w") as f:
+            json.dump(payload, f, indent=2)
+        return fname
+    def list_saved(self):
+        return sorted([p for p in os.listdir(self.dirpath) if p.endswith(".json")])
 
-def simulate_reading(preset, terrain, oxygen, radiation, space_mode):
-    base_temp = random.uniform(31, 36)
-    base_heart = random.randint(70, 90)
-    base_light = random.uniform(0.3, 0.8)
-
-    if preset == "Overheat":
-        base_temp += random.uniform(6, 9)
-        base_heart += random.randint(20, 40)
-    elif preset == "High Exertion":
-        base_temp += random.uniform(3, 6)
-        base_heart += random.randint(40, 60)
-    elif preset == "Low Light":
-        base_light = random.uniform(0.1, 0.4)
-
-    if space_mode:
-        base_temp = random.uniform(22, 30)
-        base_light = random.uniform(0.0, 0.3)
-
-    if oxygen < 65:
-        base_heart += 25
-        base_temp += 2
-    if radiation > 7:
-        base_temp += 3
-
-    temp = round(base_temp, 2)
-    heart = int(base_heart)
-    light = round(base_light, 3)
-    mode = predict_mode(temp, heart, light)
-    if temp >= 40 or heart >= 160 or oxygen <= 60 or radiation >= 8:
-        mode = "Alert Mode"
-
-    return temp, heart, light, mode
-
-
-def get_gradient_by_terrain(terrain):
-    terrains = {
-        "Forest": ("#184d27", "#0a2e17"),      # deep green tones
-        "Rock": ("#5c5c5c", "#2e2e2e"),        # natural rocky greys
-        "Desert": ("#cba35b", "#a18445"),      # sandy warm tones
-        "Urban": ("#4f4f4f", "#1f1f1f"),       # concrete realism
-        "Space": ("#0b0b2b", "#1c1c6b")        # deep navy cosmic
-    }
-    return terrains.get(terrain, ("#0aa1dd", "#0099cc"))
-
-
-def blend_mode_and_terrain(mode, terrain):
-    terrain_base, terrain_tint = get_gradient_by_terrain(terrain)
-    mode_colours = {
-        "Cool Mode": ("#4ca1af", "#2c3e50"),        # calm blue-steel
-        "Heat Mode": ("#ff914d", "#ff5e00"),        # realistic heat orange
-        "Stealth Mode": ("#1e3c1f", "#2a5725"),     # dark camo green
-        "Alert Mode": ("#2b0000", "#ff0000"),       # darker, scarier red
-    }
-    mode_base, mode_tint = mode_colours.get(mode, ("#4ca1af", "#2c3e50"))
-
-    def blend_hex(a, b):
-        a, b = int(a.lstrip("#"), 16), int(b.lstrip("#"), 16)
-        avg = (a + b) // 2
-        return f"#{avg:06x}"
-
-    return blend_hex(terrain_base, mode_base), blend_hex(terrain_tint, mode_tint)
-
-
-def render_visual(mode, terrain):
-    base, tint = blend_mode_and_terrain(mode, terrain)
-
-    if mode == "Alert Mode":
-        # More aggressive and darker pulse animation for danger effect
-        pulse_speed = "0.8s"
-        glow = f"""
-        @keyframes danger {{
-            0% {{ box-shadow: 0 0 25px {tint}, 0 0 60px {tint}; background: radial-gradient(circle, {base}, #000000); }}
-            50% {{ box-shadow: 0 0 120px #ff0000, 0 0 200px #8b0000; background: radial-gradient(circle, #440000, #000000); }}
-            100% {{ box-shadow: 0 0 25px {tint}, 0 0 60px {tint}; background: radial-gradient(circle, {base}, #000000); }}
-        }}
-        """
-        animation_name = "danger"
-    else:
-        pulse_speed = "3s"
-        glow = f"""
-        @keyframes pulse {{
-            0% {{ box-shadow: 0 0 20px {base}, 0 0 40px {tint}; }}
-            50% {{ box-shadow: 0 0 80px {base}, 0 0 120px {tint}; }}
-            100% {{ box-shadow: 0 0 20px {base}, 0 0 40px {tint}; }}
-        }}
-        """
-        animation_name = "pulse"
-
-    html = f"""
-    <style>{glow}</style>
-    <div style="
-        width:100%;
-        height:420px;
-        border-radius:20px;
-        background:linear-gradient(135deg,{base},{tint});
-        animation:{animation_name} {pulse_speed} infinite;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        flex-direction:column;
-        color:white;
-        font-size:28px;
-        font-weight:bold;
-        text-shadow:2px 2px 8px rgba(0,0,0,0.9);
-    ">
-        {mode}<br>
-        <span style='font-size:18px; opacity:0.85;'>({terrain} Terrain)</span>
-    </div>
+# ---------- Demo / evaluation utilities ----------
+def evaluate_pattern_visibility(sensor: SensorReading, pattern: Dict[str,Any]) -> float:
     """
-    st.markdown(html, unsafe_allow_html=True)
+    Dummy evaluation that returns a 'visibility score' (lower is better).
+    In real tests, you'd compute contrast against background using camera or
+    human-subject testing; here we simulate a score for demonstration.
+    """
+    # Lower lux -> night => visibility decreases with contrast
+    base = max(0.0, 1.0 - (sensor.lux / 50000.0))
+    # colour distance penalty
+    if pattern.get("type") == "colour_fill" and "rgb" in pattern:
+        r,g,b = pattern["rgb"]
+        ambient = sum(sensor.rgb)/3
+        pat_avg = (r+g+b)/3
+        colour_penalty = abs(ambient - pat_avg) / 255.0
+    else:
+        colour_penalty = 0.2
+    score = base + 0.5*colour_penalty
+    return max(0.0, min(1.0, score))
 
+# ---------- Streamlit UI (event-driven) ----------
+st.set_page_config(page_title=APP_TITLE, layout="wide")
+st.title(APP_TITLE)
 
-def export_csv(df):
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Download CSV", csv, "session_data.csv", "text/csv")
+col1, col2 = st.columns([2,1])
 
+with col1:
+    env = st.selectbox("Demo environment", ["grass","sand","urban","night"], index=0)
+    manual_override = st.checkbox("Enable manual override of pattern", value=False)
+    if manual_override:
+        manual_rgb = st.color_picker("Manual fill colour", "#2d7823")
+    else:
+        manual_rgb = None
+    run_demo = st.button("Sample sensors & run model")
 
-def generate_qr(link):
-    qr = qrcode.QRCode(box_size=3, border=2)
-    qr.add_data(link)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    st.image(buf.getvalue(), caption="Scan to open repo", use_container_width=False)
+with col2:
+    st.markdown("**Status**")
+    st.text(f"Data directory: {DATA_DIR}")
+    saved_files = DataLogger(DATA_DIR).list_saved()
+    st.text(f"Saved readings: {len(saved_files)}")
 
+# Instantiate modules
+model = TinyDecisionModel()
+led_act = LEDMatrixActuator(width=16,height=8)
+eink_act = EInkActuator(cols=8,rows=8)
+thermo_act = ThermochromicDemo()
+pm = PowerManager(battery_mah=3000, voltage=5.0)
+safety = SafetyManager(temp_cutoff_c=65.0)
+logger = DataLogger(DATA_DIR)
 
-def generate_metrics():
-    return {
-        "Core Temp (°C)": round(random.uniform(35, 41), 2),
-        "Heart Rate (BPM)": random.randint(60, 160),
-        "SpO₂ (%)": random.randint(85, 100),
-        "Respiration Rate (/min)": random.randint(12, 30),
-        "Sweat Rate (ml/h)": random.randint(300, 800),
-        "Suit Pressure (kPa)": round(random.uniform(95, 105), 1),
-        "Battery Health (%)": random.randint(60, 100),
-        "Radiation Dose (mSv)": round(random.uniform(0.1, 9.5), 2),
-        "Oxygen Level (%)": random.randint(50, 100)
-    }
+if run_demo:
+    sensor = simulate_sensor(env)
+    st.write("Sensor reading (simulated):", asdict(sensor))
+    issues = safety.check(sensor)
+    if issues:
+        st.warning("Safety issues detected: " + ", ".join(issues))
+    # Model prediction
+    pred = model.predict(sensor)
+    st.write("Model output:", pred)
+    # If manual override, create simple pattern
+    if manual_override and manual_rgb:
+        # convert hex to rgb
+        hexcode = manual_rgb.lstrip("#")
+        r,g,b = tuple(int(hexcode[i:i+2],16) for i in (0,2,4))
+        pred["pattern"] = {"type":"colour_fill","rgb":(r,g,b)}
+    # Apply to chosen actuator for demo
+    actuator_choice = st.radio("Actuator preview", ["LED matrix","E-Ink","Thermochromic demo"])
+    if actuator_choice == "LED matrix":
+        pattern = [[pred["pattern"].get("rgb",(0,0,0)) for _ in range(led_act.width)] for _ in range(led_act.height)]
+        led_act.apply_pattern(pattern)
+        st.write("LED actuator preview:", led_act.preview_summary())
+    elif actuator_choice == "E-Ink":
+        pattern = [[ "dark" if pred["pattern"].get("type")=="darker" else "light" for _ in range(eink_act.cols)] for _ in range(eink_act.rows)]
+        eink_act.apply_pattern(pattern)
+        st.write("E-Ink actuator preview:", eink_act.preview_summary())
+    else:
+        thermo_act.apply_pattern({"demo":True})
+        st.write("Thermochromic demo preview:", thermo_act.preview_summary())
+    # Evaluate visibility score and power estimate
+    score = evaluate_pattern_visibility(sensor, pred["pattern"])
+    runtime = pm.expected_runtime_hours(actuator_power_w=5.0, controller_power_w=1.0, sensors_power_w=0.5)
+    st.metric("Simulated visibility score (lower better)", f"{score:.3f}")
+    st.metric("Estimated runtime hours (worst-case)", f"{runtime:.2f} h")
+    # Save reading and model output
+    saved = logger.save_reading(sensor, pred, tag=env)
+    st.success(f"Saved reading to {saved}")
 
-# --------------------------------------------------
-# SIDEBAR
-# --------------------------------------------------
-st.sidebar.title("Simulation & System Controls")
-scenario = st.sidebar.selectbox("Scenario Preset", ["Normal", "High Exertion", "Low Light", "Overheat"])
-terrain = st.sidebar.selectbox("Terrain", ["Forest", "Rock", "Desert", "Urban", "Space"])
-oxygen = st.sidebar.slider("Oxygen (%)", 40, 100, 95)
-radiation = st.sidebar.slider("Radiation Level (0–10)", 0, 10, 2)
-space_mode = st.sidebar.checkbox("Space Mode")
-interval = st.sidebar.slider("Refresh Interval (s)", 1, 10, 3)
+# ---------- Extra: debug / dev helpers ----------
+with st.expander("Developer notes & next steps"):
+    st.markdown("""
+    **Next steps to make this buildable**
+    - Replace the TinyDecisionModel rules with a quantised TinyML model (TensorFlow Lite for Microcontrollers).
+    - Swap the simulator inputs for real sensor inputs (I2C or SPI drivers).
+    - Implement actuator drivers for your chosen hardware (APA102/WS2812 for LEDs; SPI for e-ink).
+    - Add a power gating MOSFET controlled by the controller for actuator sleep modes.
+    - Implement unit tests and integrate data collection into a reproducible dataset (CSV/IMG pairs).
+    - Document BOM, block diagrams, and a power budget table for the poster.
+    """)
+    st.markdown("**Short checklist for the competition poster**")
+    st.write("- Problem statement\n- Approach (sensing, decision, actuation)\n- Hardware block diagram and BOM\n- Power budget and thermal safety\n- Demo results and visibility score\n- Future work and scalability notes")
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Data Options")
-if st.sidebar.button("Export CSV"):
-    export_csv(st.session_state.history)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("GitHub Repo")
-repo_link = st.sidebar.text_input("Enter your repo URL", https://smart-adaptive-camouflage-suit-live-simulation.streamlit.app/")
-if st.sidebar.button("Show QR"):
-    generate_qr(repo_link)
-
-# --------------------------------------------------
-# MAIN UI
-# --------------------------------------------------
-st.markdown("<h1 class='main-title'>Smart Adaptive Camouflage Suit — Live Dashboard</h1>", unsafe_allow_html=True)
-placeholder = st.empty()
-
-while True:
-    temp, heart, light, mode = simulate_reading(scenario, terrain, oxygen, radiation, space_mode)
-    metrics = generate_metrics()
-
-    entry = {"timestamp": datetime.now(UTC).isoformat(), "temp": temp, "heart": heart, "light": light, "mode": mode}
-    new_row = pd.DataFrame([entry])
-    st.session_state.history = pd.concat([st.session_state.history, new_row], ignore_index=True).tail(300)
-
-    with placeholder.container():
-        col1, col2 = st.columns([1.2, 1])
-        with col1:
-            st.subheader("Adaptive Suit Visual")
-            st.caption(f"Mode: {mode} — Temp: {temp}°C | Heart: {heart} BPM | Light: {light}")
-            render_visual(mode, terrain)
-
-        with col2:
-            st.subheader("Physiological Metrics")
-            m1, m2, m3 = st.columns(3)
-            m1.metric("🧠 Core Temp", f"{metrics['Core Temp (°C)']} °C")
-            m2.metric("💓 Heart Rate", f"{metrics['Heart Rate (BPM)']} BPM")
-            m3.metric("🩸 SpO₂", f"{metrics['SpO₂ (%)']} %")
-
-            m4, m5, m6 = st.columns(3)
-            m4.metric("🌬️ Respiration", f"{metrics['Respiration Rate (/min)']} /min")
-            m5.metric("💧 Sweat Rate", f"{metrics['Sweat Rate (ml/h)']} ml/h")
-            m6.metric("🪖 Suit Pressure", f"{metrics['Suit Pressure (kPa)']} kPa")
-
-            m7, m8, m9 = st.columns(3)
-            m7.metric("🔋 Battery Health", f"{metrics['Battery Health (%)']} %")
-            m8.metric("☢️ Radiation", f"{metrics['Radiation Dose (mSv)']} mSv")
-            m9.metric("🌫️ Oxygen Level", f"{metrics['Oxygen Level (%)']} %")
-
-            st.subheader("Vitals Trend")
-            df = st.session_state.history.copy()
-            if not df.empty:
-                df["temp"] = pd.to_numeric(df["temp"], errors="coerce")
-                df["heart"] = pd.to_numeric(df["heart"], errors="coerce")
-                fig = px.line(df, x="timestamp", y=["temp", "heart"], title="Temperature & Heart Rate Over Time")
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No data yet.")
-    time.sleep(interval)
-
-
-
-
+# End of file
