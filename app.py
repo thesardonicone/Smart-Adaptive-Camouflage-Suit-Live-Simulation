@@ -1,37 +1,28 @@
 """
-Smart Adaptive Camouflage Suit — ML-Integrated Version
-Uses:
-- RandomForest mode classifier (suit_mode_rf.joblib)
-- Sensor simulation
-- Actuator preview (LED, E-Ink, Thermochromic demo)
-- Power & safety managers
-- Pattern mapping based on ML output
-UK spelling used.
+Smart Adaptive Camouflage Suit — ML Integrated Version
+Fully compatible with suit_mode_training.py (6-feature model)
 """
 
 import streamlit as st
-import time
-import math
-import json
 import random
+import json
 import joblib
-from dataclasses import dataclass, asdict
-from typing import Dict, Any, List, Tuple, Optional
-import datetime
 import os
+import datetime
+from dataclasses import dataclass, asdict
 
-# ---------- Configuration ----------
-APP_TITLE = "Smart Adaptive Camouflage Suit — ML Enhanced"
-DATA_DIR = "suit_logs"
-os.makedirs(DATA_DIR, exist_ok=True)
-
+# -------------------------------------------------------
+# Utility
+# -------------------------------------------------------
 def now_str():
     return datetime.datetime.utcnow().isoformat() + "Z"
 
-# ---------- Sensor Simulation ----------
+# -------------------------------------------------------
+# Sensor Simulation
+# -------------------------------------------------------
 @dataclass
 class SensorReading:
-    rgb: Tuple[int,int,int]
+    rgb: tuple
     lux: float
     cct: float
     temperature_c: float
@@ -47,31 +38,30 @@ def simulate_sensor(env="grass") -> SensorReading:
         "night": {"rgb":(10,10,20),"lux":50,"cct":3000,"temp":22,"thermal":22,"tof":120},
     }
     base = presets.get(env, presets["grass"])
-    jitter = lambda v,p=0.07: v*(1+random.uniform(-p,p))
-    rgb = (
-        int(jitter(base["rgb"][0])),
-        int(jitter(base["rgb"][1])),
-        int(jitter(base["rgb"][2]))
-    )
+    j = lambda v,p=0.07: v*(1+random.uniform(-p,p))
+    r = int(j(base["rgb"][0]))
+    g = int(j(base["rgb"][1]))
+    b = int(j(base["rgb"][2]))
+
     return SensorReading(
-        rgb=rgb,
-        lux=round(jitter(base["lux"],0.15),2),
-        cct=round(jitter(base["cct"],0.05),1),
-        temperature_c=round(jitter(base["temp"],0.08),1),
+        rgb=(r,g,b),
+        lux=round(j(base["lux"],0.15),2),
+        cct=round(j(base["cct"],0.05),1),
+        temperature_c=round(j(base["temp"],0.08),1),
         imu_yaw=round(random.uniform(0,360),1),
-        tof_mm=round(jitter(base["tof"],0.15),1),
-        thermal_c=round(jitter(base["thermal"],0.1),1),
+        tof_mm=round(j(base["tof"],0.15),1),
+        thermal_c=round(j(base["thermal"],0.1),1)
     )
 
-# ---------- Actuator Interfaces ----------
+# -------------------------------------------------------
+# Actuator Classes
+# -------------------------------------------------------
 class LEDMatrixActuator:
     def __init__(self,w=16,h=8):
         self.w=w; self.h=h
         self.state=[[(0,0,0)]*w for _ in range(h)]
-    def apply_pattern(self,pattern):
-        self.state=pattern
-    def preview(self):
-        return {"type":"LEDMatrix","size":(self.w,self.h)}
+    def apply_pattern(self,p):
+        self.state=p
 
 class EInkActuator:
     def __init__(self,w=8,h=8):
@@ -79,25 +69,22 @@ class EInkActuator:
         self.state=[["white"]*w for _ in range(h)]
     def apply_pattern(self,p):
         self.state=p
-    def preview(self):
-        return {"type":"EInk","size":(self.w,self.h)}
 
 class ThermochromicActuator:
     def __init__(self):
         self.map=None
     def apply_pattern(self,p):
         self.map=p
-    def preview(self):
-        return {"type":"Thermochromic","note":"demo layer"}
 
-# ---------- Power & Safety ----------
+# -------------------------------------------------------
+# Power + Safety
+# -------------------------------------------------------
 class PowerManager:
-    def __init__(self,mah=3000,voltage=5.0):
+    def __init__(self,mah=3000,voltage=5):
         self.mah=mah; self.voltage=voltage
-    def runtime(self,actuator=5.0,ctrl=1.0,sensor=0.5):
-        total=actuator+ctrl+sensor
+    def runtime(self,a=5,c=1,s=0.5):
         wh=(self.mah/1000)*self.voltage
-        return round(wh/total,2)
+        return round(wh/(a+c+s),2)
 
 class SafetyManager:
     def __init__(self,cutoff=65):
@@ -105,26 +92,31 @@ class SafetyManager:
     def check(self,s:SensorReading):
         issues=[]
         if s.temperature_c>self.cutoff: issues.append("ambient_overheat")
-        if s.thermal_c>self.cutoff: issues.append("thermal_patch_hot")
+        if s.thermal_c>self.cutoff: issues.append("thermal_overheat")
         if s.tof_mm<50: issues.append("close_surface")
         return issues
 
-# ---------- Data Logger ----------
+# -------------------------------------------------------
+# Logger
+# -------------------------------------------------------
 class DataLogger:
-    def __init__(self,dirp):
-        self.dirp=dirp
-    def save(self,sensor,model_out,tag):
-        fname=f"{self.dirp}/log_{now_str().replace(':','_')}.json"
-        with open(fname,"w") as f:
+    def __init__(self,folder):
+        self.folder=folder
+        os.makedirs(folder,exist_ok=True)
+    def save(self,sensor,pred,tag):
+        name=f"{self.folder}/log_{now_str().replace(':','_')}.json"
+        with open(name,"w") as f:
             json.dump({
                 "timestamp":now_str(),
                 "sensor":asdict(sensor),
-                "model":model_out,
+                "model":pred,
                 "tag":tag
             },f,indent=2)
-        return fname
+        return name
 
-# ---------- Visibility Score (simple metric) ----------
+# -------------------------------------------------------
+# Visibility Metric
+# -------------------------------------------------------
 def visibility_score(sensor,pattern):
     base=max(0,1-(sensor.lux/50000))
     if pattern.get("type")=="colour_fill":
@@ -136,42 +128,55 @@ def visibility_score(sensor,pattern):
         diff=0.25
     return round(min(1,max(0,base+0.5*diff)),3)
 
-# ---------- Load ML Model ----------
-rf_model = joblib.load("models/suit_mode_rf.joblib")
+# -------------------------------------------------------
+# Load ML Model
+# -------------------------------------------------------
+MODEL_PATH = os.path.join("models","suit_mode_rf.joblib")
 
-# ---------- UI ----------
-st.set_page_config(page_title=APP_TITLE,layout="wide")
-st.title(APP_TITLE)
+if not os.path.exists(MODEL_PATH):
+    st.error("Model not found. Ensure models/suit_mode_rf.joblib exists.")
+    st.stop()
 
-c1,c2=st.columns([2,1])
-with c1:
+rf_model = joblib.load(MODEL_PATH)
+
+# -------------------------------------------------------
+# Streamlit UI
+# -------------------------------------------------------
+st.set_page_config(page_title="Smart Adaptive Camouflage Suit — ML Enhanced",layout="wide")
+st.title("Smart Adaptive Camouflage Suit — ML Enhanced")
+
+col1,col2=st.columns([2,1])
+
+with col1:
     env = st.selectbox("Environment",["grass","sand","urban","night"])
     override = st.checkbox("Manual override pattern")
     if override:
-        manual = st.color_picker("Colour")
+        manual = st.color_picker("Pick colour")
     run = st.button("Run Suit Simulation")
 
-with c2:
-    st.write("Saved logs:",len(os.listdir(DATA_DIR)))
+with col2:
+    st.write("Logs:",len(os.listdir("suit_logs")))
 
-# Instantiate modules
-led = LEDMatrixActuator()
-eink = EInkActuator()
-thermo = ThermochromicActuator()
-power = PowerManager()
-safety = SafetyManager()
-logger = DataLogger(DATA_DIR)
+# Instances
+led=LEDMatrixActuator()
+eink=EInkActuator()
+thermo=ThermochromicActuator()
+power=PowerManager()
+safety=SafetyManager()
+logger=DataLogger("suit_logs")
 
-# ---------- MAIN LOGIC ----------
+# -------------------------------------------------------
+# MAIN EXECUTION
+# -------------------------------------------------------
 if run:
     sensor = simulate_sensor(env)
     st.write("Sensor Reading:",asdict(sensor))
 
     issues = safety.check(sensor)
     if issues:
-        st.warning("Safety Issues: "+", ".join(issues))
+        st.warning("Safety Issues: " + ", ".join(issues))
 
-    # ML Feature Vector
+    # ML INPUT VECTOR (6 FEATURES)
     rgb_avg = sum(sensor.rgb)/3
     feats = [[
         rgb_avg,
@@ -188,12 +193,12 @@ if run:
     if ml_mode == "low_light":
         pred = {
             "mode":"low_light",
-            "pattern":{"type":"darker","info":"reduced brightness for low light"}
+            "pattern":{"type":"darker"}
         }
     elif ml_mode == "thermal":
         pred = {
             "mode":"thermal",
-            "pattern":{"type":"thermal-match","info":"thermochromic demo active"}
+            "pattern":{"type":"thermal-match"}
         }
     else:
         pred = {
@@ -201,33 +206,31 @@ if run:
             "pattern":{"type":"colour_fill","rgb":sensor.rgb}
         }
 
-    # Manual override
     if override:
-        hexv = manual.lstrip("#")
-        r,g,b = tuple(int(hexv[i:i+2],16) for i in (0,2,4))
+        hx = manual.lstrip("#")
+        r,g,b = tuple(int(hx[i:i+2],16) for i in (0,2,4))
         pred["pattern"]={"type":"colour_fill","rgb":(r,g,b)}
 
     st.write("Model Output:",pred)
 
-    # Actuator preview
+    # Actuator Selection
     choice = st.radio("Actuator",["LED","E-Ink","Thermochromic"])
+
     if choice=="LED":
         pattern = [[pred["pattern"].get("rgb",(0,0,0))]*led.w for _ in range(led.h)]
         led.apply_pattern(pattern)
-        st.write(led.preview())
+        st.write("LED Applied")
     elif choice=="E-Ink":
         fill = "dark" if pred["pattern"]["type"]=="darker" else "light"
-        pattern = [[fill]*eink.w for _ in range(eink.h)]
-        eink.apply_pattern(pattern)
-        st.write(eink.preview())
+        p = [[fill]*eink.w for _ in range(eink.h)]
+        eink.apply_pattern(p)
+        st.write("E-Ink Applied")
     else:
         thermo.apply_pattern({"active":True})
-        st.write(thermo.preview())
+        st.write("Thermochromic Applied")
 
-    # Score + Runtime
-    score = visibility_score(sensor,pred["pattern"])
-    st.metric("Visibility Score",score)
+    st.metric("Visibility Score",visibility_score(sensor,pred["pattern"]))
     st.metric("Estimated Runtime (hrs)",power.runtime())
 
-    fname = logger.save(sensor,pred,env)
-    st.success(f"Saved → {fname}")
+    log = logger.save(sensor,pred,env)
+    st.success(f"Saved: {log}")
