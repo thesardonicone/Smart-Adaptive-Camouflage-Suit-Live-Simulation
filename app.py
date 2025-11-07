@@ -245,7 +245,7 @@ def generate_qr(link):
     img = qr.make_image(fill_color="black", back_color="white")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    st.image(buf.getvalue(), caption="Scan to open repo", use_container_width=False)
+    st.image(buf.getvalue(), caption="Scan to open repo",https://github.com/thesardonicone/Smart-Adaptive-Camouflage-Suit-Live-Simulation/tree/main)
 
 
 def generate_metrics():
@@ -331,6 +331,7 @@ while True:
             else:
                 st.info("No data yet.")
     time.sleep(interval)
+
 
 
 
