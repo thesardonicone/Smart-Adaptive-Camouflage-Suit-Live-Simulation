@@ -245,7 +245,7 @@ def generate_qr(link):
     img = qr.make_image(fill_color="black", back_color="white")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    st.image(buf.getvalue(), caption="Scan to open repo","https://smart-adaptive-camouflage-suit-live-simulation.streamlit.app/")
+    st.image(buf.getvalue(), caption="Scan to open repo",)
 
 
 def generate_metrics():
@@ -279,7 +279,7 @@ if st.sidebar.button("Export CSV"):
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("GitHub Repo")
-repo_link = st.sidebar.text_input("Enter your repo URL", ")
+repo_link = st.sidebar.text_input("Enter your repo URL", https://smart-adaptive-camouflage-suit-live-simulation.streamlit.app/)
 if st.sidebar.button("Show QR"):
     generate_qr(repo_link)
 
