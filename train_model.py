@@ -6,48 +6,74 @@ from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 import os
 
-# Ensure folders exist
-os.makedirs('models', exist_ok=True)
-os.makedirs('data', exist_ok=True)
+# Create folders if missing
+os.makedirs("models", exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
-# Generate synthetic data
 np.random.seed(42)
 rows = []
-for _ in range(2000):
-    temp = np.random.normal(35, 5) if np.random.rand() > 0.2 else np.random.normal(25, 3)
-    heart = int(np.random.normal(80, 15))
-    light = np.clip(np.random.beta(2, 2), 0, 1)
 
-    if heart > 130 or temp > 42:
-        mode = 'Alert Mode'
-    elif light < 0.25:
-        mode = 'Stealth Mode'
-    elif temp > 34:
-        mode = 'Cool Mode'
-    elif temp < 20:
-        mode = 'Heat Mode'
+# Generate synthetic dataset matching the sensor structure in app.py
+for _ in range(5000):
+
+    # Sensor fields: aligned EXACTLY with Streamlit simulation
+    r = np.random.randint(0, 255)
+    g = np.random.randint(0, 255)
+    b = np.random.randint(0, 255)
+    rgb_avg = (r + g + b) / 3
+
+    lux = np.random.uniform(20, 28000)
+    cct = np.random.uniform(3000, 6500)
+
+    ambient_temp = np.random.normal(30, 6)
+    thermal_temp = ambient_temp + np.random.normal(0, 3)
+
+    tof = np.random.uniform(50, 400)
+
+    # ML mode rules exactly aligned with app logic
+    if lux < 120:
+        mode = "low_light"
+    elif thermal_temp > 32:
+        mode = "thermal"
     else:
-        mode = 'Cool Mode'
+        mode = "visual_blend"
 
-    rows.append((temp, heart, light, mode))
+    rows.append([rgb_avg, lux, cct, ambient_temp, thermal_temp, tof, mode])
 
-# Create DataFrame
-df = pd.DataFrame(rows, columns=['temp', 'heart', 'light', 'mode'])
-X = df[['temp', 'heart', 'light']]
-y = df['mode']
+# Build DataFrame
+df = pd.DataFrame(rows, columns=[
+    "rgb_avg", "lux", "cct",
+    "ambient_temp", "thermal_temp", "tof",
+    "mode"
+])
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Split
+X = df[["rgb_avg", "lux", "cct", "ambient_temp", "thermal_temp", "tof"]]
+y = df["mode"]
 
-# Model training
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Train model
+model = RandomForestClassifier(
+    n_estimators=180,
+    max_depth=None,
+    random_state=42
+)
 model.fit(X_train, y_train)
 
-# Evaluate
+# Evaluate performance
 y_pred = model.predict(X_test)
+print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
-print('Confusion matrix:\n', confusion_matrix(y_test, y_pred))
 
-# Save model and data
-joblib.dump(model, 'models/suit_mode_rf.joblib')
-df.to_csv('data/synthetic_dataset.csv', index=False)
+print("Confusion Matrix:\n")
+print(confusion_matrix(y_test, y_pred))
+
+# Save output files
+joblib.dump(model, "models/suit_mode_rf.joblib")
+df.to_csv("data/synthetic_suit_dataset.csv", index=False)
+
+print("\nSaved model → models/suit_mode_rf.joblib")
+print("Saved dataset → data/synthetic_suit_dataset.csv\n")
